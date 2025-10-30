@@ -12,7 +12,7 @@
     .form-header {margin-bottom: 20px;}
   .header-row {
   display: flex;
-  align-items: baseline;       /* align button with text baseline */
+  align-items: baseline;
   justify-content: space-between;
 }
 
@@ -24,7 +24,7 @@
 
 .form-header .subheader {
   margin: 4px 0 0;
-  font-size: 1.2em;           /* a bit smaller than before */
+  font-size: 1.2em;
   color: #555;
   font-weight: normal;
 }
@@ -97,7 +97,6 @@
   
     <div class="form-group">
       <label for="poType">PO Line Type:</label>
-      <!-- CHANGED: now has id="poType"; default is your preferred one -->
       <select id="poType" class="select2" name="PO Line Type">
         <option value="print book - one time" selected>Print Book - One Time</option>
         <option value="database service - one time">Database Service - One Time</option>
@@ -125,7 +124,6 @@
 
     <div class="form-group">
       <label for="fundSelect">Fund</label>
-    <!-- CHANGED: removed disabled so you can change; JS will populate -->
       <select id="fundSelect" class="select2" name="Fund">
         <option value="" selected>Loading funds...</option>
       </select>
@@ -150,7 +148,6 @@
 
     <div class="form-group">
       <label for="receivingNote">Receiving Note:</label>
-      <!-- CHANGED: id now matches JS -->
       <textarea id="receivingNote" rows="2" placeholder="Optional notes..."></textarea>
     </div>
 
