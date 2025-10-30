@@ -20,7 +20,7 @@ directly into Alma via the Acquisitions API.
 ## Installation
 1. Download or clone this repository:
    ```bash
-   git clone https://github.com/brandeis-library/alma-order-extension.git
+   git clone https://github.com/Brandeis-Library/Alma-Order-Extension.git
 2. Open Chrome → Extensions → Manage Extensions.
 
 3. Enable Developer mode.
