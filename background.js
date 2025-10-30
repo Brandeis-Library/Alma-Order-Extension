@@ -23,8 +23,6 @@ let VENDOR_VENDOR = "";
 // Profile we're using (it was set to default in Alma)
 CONFIG.ALMA_NEW_ORDER_PROFILE = "ORDER_IT_API_PROFILE";
 
-
-
 /**
  * pulls currently stored settings and updates config in memory
  */
@@ -57,53 +55,6 @@ chrome.storage.onChanged.addListener((changes, area) => {
         if (changes.ALMA_REGION) CONFIG.ALMA_REGION = changes.ALMA_REGION.newValue || "NA";
     }
 });
-
-// encryption/decryption helpers (same as options.js)
-const enc = new TextEncoder(),
-    dec = new TextDecoder();
-
-function b64u(bytes) {
-    return btoa(String.fromCharCode.apply(null, new Uint8Array(bytes)))
-        .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
-function ub64(s) {
-    s = s.replace(/-/g, "+").replace(/_/g, "/");
-    while (s.length % 4) s += "=";
-    const bin = atob(s);
-    const out = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-    return out.buffer;
-}
-async function deriveKeyFromPassword(password, saltBytes, iterations = 200_000) {
-    const baseKey = await crypto.subtle.importKey("raw", enc.encode(password), {
-        name: "PBKDF2"
-    }, false, ["deriveKey"]);
-    return crypto.subtle.deriveKey({
-            name: "PBKDF2",
-            salt: saltBytes,
-            iterations,
-            hash: "SHA-256"
-        },
-        baseKey, {
-            name: "AES-GCM",
-            length: 256
-        }, false, ["encrypt", "decrypt"]
-    );
-}
-async function aesGcmDecrypt(key, iv, ciphertext) {
-    const pt = await crypto.subtle.decrypt({
-        name: "AES-GCM",
-        iv
-    }, key, ciphertext);
-    return dec.decode(pt);
-}
-
-async function importRawAesKey(rawBytes) {
-    return crypto.subtle.importKey("raw", rawBytes, {
-        name: "AES-GCM"
-    }, false, ["encrypt", "decrypt"]);
-}
 
 /**
  * If the extension already has saved encrypted key material, try to decrypt
@@ -575,7 +526,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 return;
             }
 
-            // attempts to decrypt Alma key, if user has permission (i.e. input the correct password)
+            // Attempts to decrypt Alma key, if user has permission (i.e. input the correct password)
             if (request?.type === "UNLOCK_ALMA_KEY") {
                 try {
                     const {
@@ -633,7 +584,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     }, true, ["encrypt", "decrypt"]);
                     const raw = new Uint8Array(await crypto.subtle.exportKey("raw", key));
 
-                    // verify password matches stored KEK
+                    // Verify password matches stored KEK
                     const toB64u = (u8) => {
                         let s = "";
                         for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]);
@@ -670,7 +621,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 return;
             }
 
-            // make key visible in options page
+            // Make key visible in options page
             if (request?.type === "REVEAL_ALMA_KEY") {
                 if (!CONFIG.ALMA_API_KEY) await tryAutoUnlockFromKEK();
                 if (!CONFIG.ALMA_API_KEY) {
@@ -696,7 +647,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 return;
             }
 
-            // Open hidden options page
+            // Open options page
             if (request?.type === "OPEN_HIDDEN_OPTIONS") {
                 chrome.tabs.create({
                     url: chrome.runtime.getURL("options.html")
