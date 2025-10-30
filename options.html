@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Send to Alma – Admin Options</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+           max-width: 720px; margin: 32px auto; padding: 0 16px; color: #222; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 16px;
+            box-shadow: 0 1px 2px rgba(0,0,0,.04); background: #fff; }
+    label { display:block; font-weight:600; margin: 12px 0 6px; }
+    input[type="text"], input[type="password"], select {
+      width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;
+    }
+    .row { display:flex; gap: 12px; align-items: center; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; padding:10px 14px; border-radius:10px;
+           border:1px solid transparent; background:#111827; color:#fff; cursor:pointer; font-weight:600; }
+    .btn.secondary { background:#fff; color:#111827; border-color:#d1d5db; }
+    .btn.danger { background:#b91c1c; }
+    .muted { color:#6b7280; }
+    .status { font-size: 13px; margin-top: 8px; }
+    .ok { color:#065f46; } .err { color:#7f1d1d; }
+    .lock { display:flex; gap:8px; align-items:center; }
+    .disabled { opacity: 0.6; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <h1>Send to Alma — Admin Options</h1>
+
+  <div class="card">
+    <label>Admin unlock</label>
+    <div class="lock">
+      <!-- Password replaces PIN -->
+      <input id="adminPassword" type="password"
+             placeholder="Enter admin password to unlock"
+             autocomplete="current-password" />
+      <button id="unlock" class="btn secondary" type="button">Unlock</button>
+      <button id="setPassword" class="btn secondary" type="button"
+              title="First-time setup via DevTools also supported">Set Password</button>
+    </div>
+    <div id="lockStatus" class="status muted">Locked.</div>
+  </div>
+  
+  <div id="settingsCard" class="card disabled">
+    <label for="apiKey">Alma API Key</label>
+    <div class="row">
+      <!-- Keep type=password here too, API key never shown as text -->
+      <input id="apiKey" type="password"
+             placeholder="Paste Alma API key…"
+             autocomplete="off" />
+      <button id="toggleKey" class="btn secondary" type="button">Show</button>
+    </div>
+  </div>
+
+    <label for="region">Region</label>
+    <select id="region">
+      <option value="NA">North America (api-na.hosted.exlibrisgroup.com)</option>
+      <option value="EU">Europe (api-eu.hosted.exlibrisgroup.com)</option>
+    </select>
+
+    <div class="row" style="margin-top:12px;">
+      <button id="save" class="btn" type="button">Save Settings</button>
+      <button id="clear" class="btn secondary" type="button">Clear Key</button>
+      <button id="test" class="btn secondary" type="button">Test Connection</button>
+    </div>
+    <div id="status" class="status muted">Locked.</div>
+
+  <script src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "name": "Send Book to Alma",
+  "description": "Extract book data from vendor pages and create PO Lines in Alma.",
+  "version": "1.0",
+  "manifest_version": 3,
+  "permissions": ["tabs", "activeTab", "scripting", "storage"],
+  "host_permissions": [
+    "https://*.abebooks.com/*",
+    "https://*.amazon.com/*",
+    "https://brandeis-psb.alma.exlibrisgroup.com/*",
+    "https://*.alma.exlibrisgroup.com/*",
+    "https://api-eu.hosted.exlibrisgroup.com/*",
+    "https://api-na.hosted.exlibrisgroup.com/*",
+    "https://www.kanopy.com/kart*"
+  ],
+  "options_page": "options.html",
+  "background": { "service_worker": "background.js" },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "content_scripts": [
+    { "matches": ["https://*.abebooks.com/*", "https://*.amazon.com/*"], "js": ["content.js"] }, {"matches": ["https://www.kanopy.com/kart*"],
+      "js": ["content-kanopy.js"],
+      "run_at": "document_idle"}
+  ]
+}

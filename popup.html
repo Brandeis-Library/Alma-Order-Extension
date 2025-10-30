@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+  <title>Send to Alma</title>
+  <link href="libs/select2/select2.min.css" rel="stylesheet" />
+  <style>
+    html, body {
+      width: 600px; height: 600px; overflow-y: auto; box-sizing: border-box;
+      margin: 0; padding: 20px 30px 20px 10px; font-family: Arial, sans-serif;
+    }
+    .form-header {margin-bottom: 20px;}
+  .header-row {
+  display: flex;
+  align-items: baseline;       /* align button with text baseline */
+  justify-content: space-between;
+}
+
+.form-header h2 {
+  margin: 0;
+  font-size: 2em;
+  font-weight: bold;
+}
+
+.form-header .subheader {
+  margin: 4px 0 0;
+  font-size: 1.2em;           /* a bit smaller than before */
+  color: #555;
+  font-weight: normal;
+}
+    .form-grid { display: flex; flex-wrap: wrap; gap: 20px; }
+    .form-group { flex: 1 1 45%; display: flex; flex-direction: column; }
+    .form-group label { font-weight: bold; margin-bottom: 5px; }
+    #manualPackagingContainer { display: flex; align-items: center; margin-top: 15px; }
+    #manualPackagingContainer label { font-weight: bold; margin-left: 8px; }
+    #submit { margin-top: 20px; background-color: #3f51b5; color: #fff; padding: 10px 20px; border: none; cursor: pointer; font-weight: bold; border-radius: 4px; }
+    #selectedUsers { margin-top: 5px; }
+  </style>
+
+<style>
+  .options-stack{
+    display:flex;flex-direction:column;align-items:flex-end;
+  }
+  .options-stack #usagePill{
+    margin-top:4px;font-size:12px;color:#555;
+  }
+</style>
+
+</head>
+
+<body>
+  <div class="form-header">
+    <div class="header-row">
+      <h2>Create PO line in Alma for this item</h2>
+      <div class="options-stack">
+        <button id="openOptionsBtn" data-allow-when-locked="true">Options</button>
+        <span id="usagePill">Remaining queries: —</span>
+      </div>
+    </div>
+    <p class="subheader">Please define Fund and Reporting Code</p>
+    <div id="apiKeyBanner" style="display:none;
+     background:#fff3cd;
+     color:#664d03;
+     border:1px solid #ffecb5;
+     border-radius:4px;
+     padding:6px 10px;
+     margin:8px 0;
+     font-size:13px;">
+</div>
+  </div>
+
+  <div class="form-grid">
+    <div class="form-group">
+      <label for="title">Title:</label>
+      <input type="text" id="title" placeholder="Title" />
+    </div>
+
+    <div class="form-group">
+      <label for="price">List Price:</label>
+      <input type="text" id="price" placeholder="$0.00" />
+    </div>
+
+    <div class="form-group">
+      <label for="currency">Currency:</label>
+      <input type="text" id="currency" value="USD" />
+    </div>
+
+    <div class="form-group">
+      <label for="quantity">Quantity for Pricing:</label>
+      <input type="number" id="quantity" value="1" min="1"/>
+    </div>
+
+    <div class="form-group">
+      <label for="url">Material Supplier:</label>
+      <input type="text" id="url" placeholder="Material supplier" />
+    </div>
+  
+    <div class="form-group">
+      <label for="poType">PO Line Type:</label>
+      <!-- CHANGED: now has id="poType"; default is your preferred one -->
+      <select id="poType" class="select2" name="PO Line Type">
+        <option value="print book - one time" selected>Print Book - One Time</option>
+        <option value="database service - one time">Database Service - One Time</option>
+        <option value="digital - non archiving">Digital - Non Archiving</option>
+        <option value="electronic book - one time">Electronic Book - One Time</option>
+        <option value="electronic journal - one time">Electronic Journal - One Time</option>
+        <option value="electronic collection - one time">Electronic Collection - One Time</option>
+        <option value="electronic title - one time">Electronic Title - One Time</option>
+        <option value="license upgrade">License Upgrade</option>
+        <option value="manuscript">Manuscript</option>
+        <option value="map">Map</option>
+        <option value="microform">Microform</option>
+        <option value="mixed material">Mixed Material</option>
+        <option value="other service - one time">Other Service - One Time</option>
+        <option value="physical-archiving">Physical - Archiving</option>
+        <option value="physical computer file - one time">Physical Computer File - One Time</option>
+        <option value="physical - one time">Physical - One Time</option>
+        <option value="print journal - one time">Print Journal - One Time</option>
+        <option value="sound recording">Sound Recording</option>
+        <option value="remote computer file - one time">Remote Computer File - One Time</option>
+        <option value="musical score">Musical Score</option>
+        <option value="visual material">Visual Material</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="fundSelect">Fund</label>
+    <!-- CHANGED: removed disabled so you can change; JS will populate -->
+      <select id="fundSelect" class="select2" name="Fund">
+        <option value="" selected>Loading funds...</option>
+      </select>
+    </div>
+    
+    <div class="form-group">
+      <label for="reportCodeSelect">Reporting Code</label>
+      <select id="reportCodeSelect" class="select2" name="Reporting Code">
+        <option value="" selected>Loading reporting codes...</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="materialType">Material Type</label>
+      <select id="materialType" class="select2" name="Material Type">
+        <option value="Book" selected>Book</option>
+        <option value="streaming">Streaming Video</option>.
+        <option value="DVD">DVD</option>
+        <option value="eBook">eBook</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="receivingNote">Receiving Note:</label>
+      <!-- CHANGED: id now matches JS -->
+      <textarea id="receivingNote" rows="2" placeholder="Optional notes..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="interestedUsers">Interested users</label>
+      <select id="interestedUsers" multiple style="width: 100%"></select>
+      <small class="help-text">Type name or unique identifier.</small>
+    </div>
+
+  <button id="submit">Send to Alma</button>
+
+  <script src="libs/select2/jquery.min.js"></script>
+  <script src="libs/select2/select2.min.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
