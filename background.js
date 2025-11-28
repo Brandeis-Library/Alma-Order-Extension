@@ -341,10 +341,12 @@ function mapToAlmaPOL(f = {}) {
 
     // ISBN code
     if (f.isbn) {
-        const clean = String(f.isbn).replace(/[^0-9Xx]/g, "");
-        if (clean) {
-            body.resource_metadata.isbn = clean;
-        }
+      const clean = String(f.isbn).replace(/[^0-9Xx]/g, "");
+      if (clean) {
+        body.resource_metadata.isbn = [
+          { value: clean }
+        ];
+      }
     }
 
     // Physical one-time lines
