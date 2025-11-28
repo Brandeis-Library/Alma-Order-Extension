@@ -12,6 +12,9 @@
 // helper
 const $ = (id) => document.getElementById(id);
 
+// Scraped ISBN storage
+let __SCRAPED_ISBN = "";
+
 /**
  * If the given form field is currently blank, fill it with val.
  * If the user already typed something, we leave it alone.
@@ -93,66 +96,86 @@ async function getVendorPrefill() {
  * currency, supplier ("Kanopy"), default PO line type = "electronic title - one time", 
  * default material type = "streaming", and receiving note (license, Kanopy ID)
  */
-(async function maybePrefillFromVendor() {
-    const pre = await getVendorPrefill();
-    if (!pre || !pre.items?.length) return;
+// Only Kanopy cart tabs should ever apply vendor prefill
+(function maybePrefillFromVendor() {
+    chrome.tabs.query({
+        active: true,
+        currentWindow: true
+    }, async (tabs) => {
+        const tab = tabs && tabs[0];
+        const url = tab?.url || "";
+        const isKanopyCart = /^https?:\/\/www\.kanopy\.com\/kart\b/.test(url);
+        if (!isKanopyCart) {
+            // Not on Kanopy -> do not pull from vendor queue at all
+            return;
+        }
 
-    const it = pre.items[0];
+        const pre = await getVendorPrefill();
+        if (!pre || !pre.items?.length) return;
 
-    // Basic text/number fields
-    setValueIfEmpty("title", it.title || "");
-    if (it.price != null) {
-        const p = typeof it.price === "string" ? parseFloat(it.price.replace(/[^0-9.]/g, "")) : it.price;
-        if (Number.isFinite(p)) setValueIfEmpty("price", p);
-    }
-    setValueIfEmpty("quantity", String(it.quantity || 1));
-    if (it.currency) {
-        const c = document.getElementById("currency");
-        if (c && !c.value) c.value = it.currency;
-    }
+        const it = pre.items[0];
 
-    setValueIfEmpty("url", "Kanopy");
+        // Basic text/number fields
+        setValueIfEmpty("title", it.title || "");
+        if (it.price != null) {
+            const p = typeof it.price === "string" ?
+                parseFloat(it.price.replace(/[^0-9.]/g, "")) :
+                it.price;
+            if (Number.isFinite(p)) setValueIfEmpty("price", p);
+        }
+        setValueIfEmpty("quantity", String(it.quantity || 1));
+        if (it.currency) {
+            const c = document.getElementById("currency");
+            if (c && !c.value) c.value = it.currency;
+        }
 
-    //Default PO Line Type to Electronic Title - One Time
-    {
-        const poSel = document.getElementById("poType");
-        if (poSel && !poSel.dataset.prefilledByKanopy) {
-            const want = "electronic title - one time";
-            const opt = Array.from(poSel.options).find(o => (o.value || "").toLowerCase() === want);
-            if (opt) {
-                poSel.value = opt.value;
-                poSel.dataset.prefilledByKanopy = "1";
-                if (window.jQuery && window.jQuery("#poType").data("select2")) {
-                    window.jQuery("#poType").trigger("change");
+        setValueIfEmpty("url", "Kanopy");
+
+        // Default PO Line Type to Electronic Title - One Time
+        {
+            const poSel = document.getElementById("poType");
+            if (poSel && !poSel.dataset.prefilledByKanopy) {
+                const want = "electronic title - one time";
+                const opt = Array.from(poSel.options).find(
+                    (o) => (o.value || "").toLowerCase() === want
+                );
+                if (opt) {
+                    poSel.value = opt.value;
+                    poSel.dataset.prefilledByKanopy = "1";
+                    if (window.jQuery && window.jQuery("#poType").data("select2")) {
+                        window.jQuery("#poType").trigger("change");
+                    }
                 }
             }
         }
-    }
 
-    //Default Material Type to Streaming video (label "streaming")
-    {
-        const mt = document.getElementById("materialType");
-        if (mt && !mt.dataset.prefilledByKanopy) {
-            const opt = Array.from(mt.options).find(o => (o.value || "").toLowerCase() === "streaming");
-            if (opt) {
-                mt.value = opt.value;
-                mt.dataset.prefilledByKanopy = "1";
-                if (window.jQuery && window.jQuery("#materialType").data("select2")) {
-                    window.jQuery("#materialType").trigger("change");
+        // Default Material Type to Streaming video (label "streaming")
+        {
+            const mt = document.getElementById("materialType");
+            if (mt && !mt.dataset.prefilledByKanopy) {
+                const opt = Array.from(mt.options).find(
+                    (o) => (o.value || "").toLowerCase() === "streaming"
+                );
+                if (opt) {
+                    mt.value = opt.value;
+                    mt.dataset.prefilledByKanopy = "1";
+                    if (window.jQuery && window.jQuery("#materialType").data("select2")) {
+                        window.jQuery("#materialType").trigger("change");
+                    }
                 }
             }
         }
-    }
 
-    // Receiving note
-    const rn = [];
-    if (it.license) rn.push(`License: ${it.license}`);
-    if (it.kanopy_id) rn.push(`Kanopy ID: ${it.kanopy_id}`);
-    if (rn.length) setValueIfEmpty("receivingNote", rn.join("\n"));
+        // Receiving note
+        const rn = [];
+        if (it.license) rn.push(`License: ${it.license}`);
+        if (it.kanopy_id) rn.push(`Kanopy ID: ${it.kanopy_id}`);
+        if (rn.length) setValueIfEmpty("receivingNote", rn.join("\n"));
 
-    // Optional toast
-    if (typeof showToast === "function") showToast("Loaded details from Kanopy cart");
+        if (typeof showToast === "function") showToast("Loaded details from Kanopy cart");
+    });
 })();
+
 
 /**
  * Puts number of remaining queries for the day for the API key at top of popup.
@@ -331,6 +354,11 @@ function applyScrape(d = {}) {
         const curEl = $("currency");
         if (curEl && !curEl.value) curEl.value = d.currency;
     }
+
+    // ISBN (Amazon scrape)
+    if (d.isbn) {
+        __SCRAPED_ISBN = String(d.isbn).trim();
+    }
 }
 
 /**
@@ -391,6 +419,9 @@ function prefillFromPage() {
         const tabId = tabs && tabs[0] && tabs[0].id;
         if (!tabId) return;
 
+        // reset ISBN when scraping a new page
+        __SCRAPED_ISBN = "";
+
         chrome.tabs.sendMessage(tabId, {
             type: "SCRAPE_BOOK_INFO"
         }, (resp) => {
@@ -403,6 +434,7 @@ function prefillFromPage() {
         });
     });
 }
+
 
 /**
  * Asks background for the list of funds received from Alma
@@ -572,14 +604,28 @@ function getMaterialTypeCode() {
  */
 async function isKanopyVendorPrefill() {
     return new Promise((resolve) => {
-        chrome.runtime.sendMessage({
-            type: "GET_VENDOR_PREFILL"
-        }, (res) => {
-            const v = res?.data?.vendor || "";
-            resolve(String(v).toUpperCase().includes("KANOPY"));
+        chrome.tabs.query({
+            active: true,
+            currentWindow: true
+        }, (tabs) => {
+            const tab = tabs && tabs[0];
+            const url = tab?.url || "";
+            const isKanopyCart = /^https?:\/\/www\.kanopy\.com\/kart\b/.test(url);
+            if (!isKanopyCart) {
+                resolve(false);
+                return;
+            }
+
+            chrome.runtime.sendMessage({
+                type: "GET_VENDOR_PREFILL"
+            }, (res) => {
+                const v = res?.data?.vendor || "";
+                resolve(String(v).toUpperCase().includes("KANOPY"));
+            });
         });
     });
 }
+
 
 /**
  * After successfully creating a PO line from one Kanopy cart item,
@@ -709,7 +755,6 @@ function gatherInterestedUsers() {
  * @returns the normalised values.
  */
 function collectForm() {
-    // normalize only; do not shape Alma JSON here
     const normalizePoType = (val) => {
         const s = String(val || "").trim().toLowerCase();
         if (!s) return "PRINT_OT";
@@ -729,12 +774,14 @@ function collectForm() {
         return map[s] || "PRINT_OT";
     };
 
+    const supplier = document.getElementById("url")?.value?.trim() || "";
+
     return {
         title: document.getElementById("title")?.value?.trim() || "",
         price: Number(document.getElementById("price")?.value || 0),
         currency: document.getElementById("currency")?.value || "USD",
         quantity: Math.max(1, Number(document.getElementById("quantity")?.value || 1)),
-        supplier: document.getElementById("url")?.value?.trim() || "",
+        supplier,
         po_line_type: normalizePoType(document.getElementById("poType")?.value),
         material_type: getMaterialTypeCode(),
         fund: document.getElementById("fundSelect")?.value || "",
@@ -743,7 +790,8 @@ function collectForm() {
         interested_users: gatherInterestedUsers(),
         manual_packaging: false,
         owner: "MAIN",
-        location_code: "MSTCK"
+        location_code: "MSTCK",
+        isbn: __SCRAPED_ISBN || ""
     };
 }
 
@@ -770,6 +818,7 @@ function validateForm(f) {
  */
 function submitForm() {
     const payload = collectForm();
+    console.log("[AlmaExt] payload to background:", payload);
     const missing = validateForm(payload);
     if (missing.length) {
         alert("Please fill required fields: " + missing.join(", "));
