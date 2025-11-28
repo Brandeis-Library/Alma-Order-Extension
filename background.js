@@ -339,13 +339,21 @@ function mapToAlmaPOL(f = {}) {
     const copies = Math.max(1, Number(f.quantity) || 1);
     body.quantity = copies;
 
+    // ISBN code
+    if (f.isbn) {
+        const clean = String(f.isbn).replace(/[^0-9Xx]/g, "");
+        if (clean) {
+            body.resource_metadata.isbn = clean;
+        }
+    }
+
     // Physical one-time lines
     const isPhysicalOT = poType === "PRINT_OT" || poType === "PHYSICAL_OT";
     if (isPhysicalOT) {
         body.location = [{
             library: {
                 value: ownerCode // "MAIN"
-            }, 
+            },
             location: {
                 value: f.location_code || "MSTCK"
             },
@@ -502,7 +510,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             }
 
 
-            // If decrytped key not visible then tries to decrypt key
+            // If decrypted key not visible then tries to decrypt key
             if (request?.type === "HAS_API_KEY") {
                 if (!CONFIG.ALMA_API_KEY) await tryAutoUnlockFromKEK();
                 sendResponse({
