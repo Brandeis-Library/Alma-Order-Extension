@@ -343,11 +343,10 @@ function mapToAlmaPOL(f = {}) {
     if (f.isbn) {
       const clean = String(f.isbn).replace(/[^0-9Xx]/g, "");
       if (clean) {
-        body.resource_metadata.isbn = [
-          { value: clean }
-        ];
+        body.resource_metadata.isbn = clean;
       }
     }
+
 
     // Physical one-time lines
     const isPhysicalOT = poType === "PRINT_OT" || poType === "PHYSICAL_OT";
