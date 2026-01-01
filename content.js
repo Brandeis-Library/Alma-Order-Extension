@@ -113,7 +113,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     price = abebooksVisiblePrice.textContent.trim();
                 }
 
-            }
+                // If that fails, try structured data
+                if (!price) {
+                    const metaPrice = document.querySelector("meta[itemprop='price']");
+                    if (metaPrice && metaPrice.content) {
+                        price = `$${Number(metaPrice.content).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
+                    }
+                }
+
+                currency = "USD";
+              }
 
             // Fallback for title
             if (!title) {
