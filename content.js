@@ -107,18 +107,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     title = abebooksTitle.textContent.trim();
                 }
 
-                // Tries to get visible formatted price
-                const abebooksVisiblePrice = document.querySelector(".price");
-                if (abebooksVisiblePrice) {
-                    price = abebooksVisiblePrice.textContent.trim();
-                }
+                const priceEl =
+                    document.querySelector("[itemprop='price']") ||
+                    document.querySelector("meta[itemprop='price']") ||
+                    document.querySelector("[data-cy*='price']") ||
+                    document.querySelector("[class*='price']") ||
+                    document.querySelector(".price");
 
-                // If that fails, try structured data
-                if (!price) {
-                    const metaPrice = document.querySelector("meta[itemprop='price']");
-                    if (metaPrice && metaPrice.content) {
-                        price = `$${Number(metaPrice.content).toLocaleString("en-US", { minimumFractionDigits: 2 })}`;
-                    }
+                if (priceEl) {
+                    price = (priceEl.getAttribute("content") || priceEl.textContent || "").trim();
                 }
 
                 currency = "USD";
